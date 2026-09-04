@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="control_size">72dp</dimen>
+    <dimen name="control_margin">12dp</dimen>
+    <dimen name="prompter_padding_h">28dp</dimen>
+    <dimen name="prompter_padding_v">40dp</dimen>
+</resources>

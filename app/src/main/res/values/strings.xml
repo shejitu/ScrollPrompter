@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">滚动提示器</string>
+    <string name="btn_play">播放</string>
+    <string name="btn_pause">暂停</string>
+    <string name="btn_brightness">亮度</string>
+    <string name="btn_settings">设置</string>
+    <string name="btn_edit">文稿</string>
+    <string name="btn_close">关闭</string>
+    <string name="label_font_size">字体大小</string>
+    <string name="label_scroll_speed">滚动速度</string>
+    <string name="label_brightness">屏幕亮度</string>
+    <string name="brightness_auto">自动</string>
+    <string name="brightness_low">低</string>
+    <string name="brightness_medium">中</string>
+    <string name="brightness_high">高</string>
+    <string name="speed_slow">慢</string>
+    <string name="speed_fast">快</string>
+    <string name="font_small">小</string>
+    <string name="font_large">大</string>
+    <string name="hint_edit_text">在此输入或粘贴要显示的文稿内容…</string>
+    <string name="edit_title">编辑文稿</string>
+    <string name="edit_save">保存</string>
+    <string name="empty_hint">暂无内容，请点击「文稿」按钮添加要显示的文字</string>
+</resources>

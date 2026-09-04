@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.ScrollPrompter" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorPrimaryVariant">@color/accent_dark</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="android:statusBarColor">@color/prompter_bg</item>
+        <item name="android:navigationBarColor">@color/prompter_bg</item>
+        <item name="android:windowBackground">@color/prompter_bg</item>
+    </style>
+</resources>

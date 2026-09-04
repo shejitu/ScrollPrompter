@@ -1,0 +1,243 @@
+package com.agnes.scrollprompter
+
+import android.graphics.Typeface
+import android.os.Build
+import android.os.Bundle
+import android.util.TypedValue
+import android.view.MotionEvent
+import android.view.View
+import android.view.WindowManager
+import android.widget.SeekBar
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import com.agnes.scrollprompter.databinding.ActivityMainBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var settings: SettingManager
+    private lateinit var scrollManager: ScrollManager
+
+    // 当前亮度档位（-1=自动，0.3=低，0.5=中，0.8=高）
+    private var brightnessValue: Float = -1f
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        settings = SettingManager(this)
+        scrollManager = ScrollManager(binding.scrollView)
+
+        setupImmersiveMode()
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        loadSettings()
+        setupControls()
+        setupScrollCallbacks()
+    }
+
+    // ---- 初始化 ----
+
+    private fun setupImmersiveMode() {
+        if (Build.VERSION.SDK_INT >= 30) {
+            window.insetsController?.let {
+                it.hide(android.view.WindowInsets.Type.systemBars())
+                it.systemBarsBehavior =
+                    android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = (
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    or View.SYSTEM_UI_FLAG_FULLSCREEN
+                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                )
+        }
+    }
+
+    /** 加载已保存的设置与文稿 */
+    private fun loadSettings() {
+        // 文稿
+        val text = settings.getText()
+        if (TextProcessor.isEmpty(text)) {
+            binding.prompterText.setText(R.string.empty_hint)
+        } else {
+            binding.prompterText.text = text
+        }
+
+        // 字体大小（24~90sp）
+        val fontSp = settings.getFontSizeSp()
+        applyFontSize(fontSp)
+        binding.fontSeekbar.progress = (fontSp - FONT_MIN_SP).toInt().coerceIn(0, FONT_MAX - FONT_MIN)
+        binding.fontValue.text = "${fontSp.toInt()}sp"
+
+        // 滚动速度（间隔 30~800ms，值越大越慢）
+        val interval = settings.getScrollIntervalMs()
+        scrollManager.intervalMs = interval
+        binding.speedSeekbar.progress = (SPEED_MAX_MS - interval).toInt().coerceIn(0, SPEED_RANGE)
+        binding.speedValue.text = formatSpeed(interval)
+
+        // 亮度
+        brightnessValue = settings.getBrightnessValue()
+        applyBrightness(brightnessValue)
+    }
+
+    private fun setupControls() {
+        // 字体大小 SeekBar
+        binding.fontSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val sp = FONT_MIN_SP + progress
+                applyFontSize(sp.toFloat())
+                binding.fontValue.text = "${sp}sp"
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                settings.saveFontSize(FONT_MIN_SP + binding.fontSeekbar.progress.toFloat())
+            }
+        })
+
+        // 滚动速度 SeekBar（progress 越大 → 间隔越小 → 越快）
+        binding.speedSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val interval = SPEED_MAX_MS - progress
+                scrollManager.intervalMs = interval.toLong()
+                binding.speedValue.text = formatSpeed(interval.toLong())
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                settings.saveScrollInterval(scrollManager.intervalMs)
+            }
+        })
+
+        // 播放/暂停
+        binding.btnPlay.setOnClickListener { togglePlay() }
+
+        // 亮度循环切换（4 档）
+        binding.btnBrightness.setOnClickListener { cycleBrightness() }
+
+        // 设置面板开关
+        binding.btnSettings.setOnClickListener {
+            val visible = binding.settingsPanel.visibility == View.VISIBLE
+            binding.settingsPanel.visibility = if (visible) View.GONE else View.VISIBLE
+        }
+
+        // 编辑文稿
+        binding.btnEdit.setOnClickListener { showEditDialog() }
+
+        // 点击文字区快速前后跳转（左半屏后退 / 右半屏前进）
+        binding.scrollView.setOnTouchListener { view, event ->
+            if (event.action == MotionEvent.ACTION_UP) {
+                val half = view.width / 2f
+                if (event.x < half) scrollManager.stepBackward() else scrollManager.stepForward()
+            }
+            false // 不消费事件，保留手动拖动滚动能力
+        }
+    }
+
+    private fun setupScrollCallbacks() {
+        scrollManager.onFinished = {
+            binding.btnPlay.setImageResource(R.drawable.ic_play)
+            binding.btnPlay.setBackgroundResource(R.drawable.bg_play_round)
+        }
+    }
+
+    // ---- 播放控制 ----
+
+    private fun togglePlay() {
+        val playing = scrollManager.toggle()
+        if (playing) {
+            binding.btnPlay.setImageResource(R.drawable.ic_pause)
+            binding.btnPlay.setBackgroundResource(R.drawable.bg_pause_round)
+        } else {
+            binding.btnPlay.setImageResource(R.drawable.ic_play)
+            binding.btnPlay.setBackgroundResource(R.drawable.bg_play_round)
+        }
+    }
+
+    // ---- 字体 ----
+
+    private fun applyFontSize(sp: Float) {
+        binding.prompterText.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp)
+        // 字体样式跟随系统默认
+        binding.prompterText.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+    }
+
+    // ---- 亮度 ----
+
+    private fun cycleBrightness() {
+        brightnessValue = when (brightnessValue) {
+            -1f -> 0.3f   // 低
+            0.3f -> 0.5f  // 中
+            0.5f -> 0.8f  // 高
+            else -> -1f   // 自动
+        }
+        applyBrightness(brightnessValue)
+    }
+
+    private fun applyBrightness(value: Float) {
+        val lp = window.attributes
+        lp.screenBrightness = value
+        window.attributes = lp
+    }
+
+    // ---- 编辑文稿 ----
+
+    private fun showEditDialog() {
+        val input = android.widget.EditText(this)
+        input.setText(if (TextProcessor.isEmpty(settings.getText())) "" else settings.getText())
+        input.setTextColor(ContextCompat.getColor(this, R.color.prompter_text))
+        input.setHintTextColor(ContextCompat.getColor(this, R.color.prompter_text_dim))
+        input.setHint(R.string.hint_edit_text)
+        input.textSize = 16f
+        input.gravity = android.view.Gravity.TOP or android.view.Gravity.START
+        input.setBackgroundResource(R.drawable.bg_edit)
+        input.minLines = 8
+        input.setPadding(24, 20, 24, 20)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.edit_title)
+            .setView(input)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.edit_save) { _, _ ->
+                val newText = input.text.toString()
+                settings.saveText(newText)
+                if (TextProcessor.isEmpty(newText)) {
+                    binding.prompterText.setText(R.string.empty_hint)
+                } else {
+                    binding.prompterText.text = TextProcessor.normalize(newText)
+                }
+                scrollManager.reset()
+            }
+            .show()
+    }
+
+    // ---- 工具 ----
+
+    private fun formatSpeed(intervalMs: Long): String = "${intervalMs}ms"
+
+    override fun onPause() {
+        super.onPause()
+        // 后台自动暂停滚动，避免离开界面后仍在滚动
+        if (scrollManager.isPlaying) {
+            scrollManager.pause()
+            binding.btnPlay.setImageResource(R.drawable.ic_play)
+            binding.btnPlay.setBackgroundResource(R.drawable.bg_play_round)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        scrollManager.pause()
+    }
+
+    companion object {
+        private const val FONT_MIN_SP = 24
+        private const val FONT_MAX = 90
+        private const val SPEED_MAX_MS = 800
+        private const val SPEED_RANGE = 770  // 800 - 30
+    }
+}

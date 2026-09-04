@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="prompter_bg">#0F1218</color>
+    <color name="prompter_bg_alt">#1A1F2B</color>
+    <color name="prompter_text">#F5F7FA</color>
+    <color name="prompter_text_dim">#9AA3B2</color>
+    <color name="accent">#4F8CFF</color>
+    <color name="accent_dark">#3A6FD8</color>
+    <color name="play_green">#22C55E</color>
+    <color name="pause_orange">#F59E0B</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>
