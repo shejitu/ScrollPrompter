@@ -72,7 +72,7 @@ class MainActivity : AppCompatActivity() {
         // 字体大小（24~90sp）
         val fontSp = settings.getFontSizeSp()
         applyFontSize(fontSp)
-        binding.fontSeekbar.progress = (fontSp - FONT_MIN_SP).toInt().coerceIn(0, FONT_MAX - FONT_MIN)
+        binding.fontSeekbar.progress = (fontSp - FONT_MIN_SP).toInt().coerceIn(0, FONT_MAX - FONT_MIN_SP)
         binding.fontValue.text = "${fontSp.toInt()}sp"
 
         // 滚动速度（间隔 30~800ms，值越大越慢）
