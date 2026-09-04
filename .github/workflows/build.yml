@@ -22,17 +22,12 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # 该 action 会安装 SDK 命令行工具、把 sdkmanager 加入 PATH，并默认自动接受许可证
       - name: 配置 Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
-      - name: 接受许可并安装 SDK 组件
-        run: |
-          SDK="$ANDROID_HOME"
-          (yes || true) | "$SDK/cmdline-tools/latest/bin/sdkmanager" --licenses
-          (yes || true) | "$SDK/cmdline-tools/latest/bin/sdkmanager" \
-            "platforms;android-34" \
-            "build-tools;34.0.0" \
-            "platform-tools"
+      - name: 安装编译所需 SDK 组件
+        run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
       - name: 下载 Gradle 8.7
         run: |
