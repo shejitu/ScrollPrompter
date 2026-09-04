@@ -12,6 +12,8 @@ jobs:
   build-apk:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
@@ -69,3 +71,16 @@ jobs:
           name: ScrollPrompter-APK
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      # 构建成功后，把 APK 单独提交到 apk 分支（便于通过 Git API 取回）
+      - name: 发布 APK 到 apk 分支
+        if: success()
+        run: |
+          git config user.name "shejitu"
+          git config user.email "shejitu@gmail.com"
+          git checkout --orphan apk-publish
+          git rm -rf --cached . >/dev/null 2>&1 || true
+          cp app/build/outputs/apk/debug/app-debug.apk ScrollPrompter.apk
+          git add ScrollPrompter.apk
+          git commit -m "APK build ${GITHUB_SHA}"
+          git push -f origin apk-publish:apk
