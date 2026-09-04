@@ -36,7 +36,32 @@ jobs:
           echo "/opt/gradle-8.7/bin" >> "$GITHUB_PATH"
 
       - name: 构建 Debug APK
-        run: gradle assembleDebug --no-daemon
+        run: |
+          set -o pipefail
+          gradle assembleDebug --no-daemon 2>&1 | tee /tmp/build.log
+
+      # 失败时把关键错误输出为 ::error:: 注解（可通过 API 读取）
+      - name: 输出错误详情（注解）
+        if: failure()
+        run: |
+          python3 - <<'EOF'
+          import re
+          log = open('/tmp/build.log', encoding='utf-8', errors='replace').read()
+          # 抓取关键错误段落
+          chunks = []
+          m = re.search(r'What went wrong:[\s\S]{0,3000}', log)
+          if m: chunks.append(m.group(0))
+          errs = [l for l in log.splitlines() if re.search(r'e: |error:|FAILURE|Caused by|Exception', l)]
+          if errs:
+              chunks.append('\n'.join(errs[-80:]))
+          if not chunks:
+              chunks.append('\n'.join(log.splitlines()[-120:]))
+          text = '\n'.join(chunks)[-6000:]
+          for i in range(0, len(text), 2800):
+              part = text[i:i+2800]
+              part = part.replace('%','%25').replace('\r','%0D').replace('\n','%0A')
+              print(f'::error::PART{i//2800}::{part}')
+          EOF
 
       - name: 上传 APK 产物
         uses: actions/upload-artifact@v4
