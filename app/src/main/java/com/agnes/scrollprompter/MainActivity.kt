@@ -303,8 +303,8 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val FONT_MIN_SP = 24
         private const val FONT_MAX = 90
-        private const val FONT_INPUT_MIN = 12
-        private const val FONT_INPUT_MAX = 200
+        private const val FONT_INPUT_MIN = 12f
+        private const val FONT_INPUT_MAX = 200f
         private const val SPEED_MAX_MS = 800
         private const val SPEED_MIN_MS = 16
         private const val SPEED_RANGE = 784  // 800 - 16
