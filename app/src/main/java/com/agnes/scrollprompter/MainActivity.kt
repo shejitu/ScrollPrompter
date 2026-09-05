@@ -444,8 +444,15 @@ class MainActivity : AppCompatActivity() {
         input.textSize = 16f
         input.gravity = android.view.Gravity.TOP or android.view.Gravity.START
         input.setBackgroundResource(R.drawable.bg_edit)
-        input.minLines = 8
         input.setPadding(24, 20, 24, 20)
+        // 固定高度（约屏高 45%）：长文稿在框内右侧下拉滚动，按钮行永远在下方可见
+        val boxHeight = (resources.displayMetrics.heightPixels * 0.45f).toInt()
+        input.layoutParams = android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT, boxHeight
+        )
+        input.isVerticalScrollBarEnabled = true
+        input.setHorizontallyScrolling(false)
+        input.movementMethod = android.text.method.ScrollingMovementMethod()
 
         // 四个操作按钮全部放在对话框内部自定义视图里：
         // 系统对话框按钮（取消/保存/清空）点击会自动关闭整个对话框，导致「清空」看起来无效；
