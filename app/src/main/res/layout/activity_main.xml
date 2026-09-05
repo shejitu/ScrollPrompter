@@ -261,7 +261,7 @@
                 android:textColor="@color/prompter_text_dim"
                 android:textSize="12sp" />
 
-            <!-- 语音跟随开关（原控制栏麦克风按钮移入此处） -->
+            <!-- 屏幕亮度（4档循环，点击切换；原控制栏按钮移入此处） -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -272,13 +272,22 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/label_voice_follow"
+                    android:text="@string/label_brightness"
                     android:textColor="@color/prompter_text"
                     android:textSize="15sp" />
-                <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/switch_voice_follow"
+                <TextView
+                    android:id="@+id/brightness_mode"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_edit"
+                    android:paddingLeft="18dp"
+                    android:paddingRight="18dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    android:text="@string/brightness_auto"
+                    android:textColor="@color/accent"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
             </LinearLayout>
 
             <!-- 语音跟随灵敏度 -->
@@ -389,17 +398,17 @@
             android:scaleType="centerInside"
             android:padding="12dp" />
 
-        <!-- 亮度 -->
+        <!-- 语音跟随（你朗读→滚动，停顿→暂停） -->
         <ImageButton
-            android:id="@+id/btn_brightness"
+            android:id="@+id/btn_mic"
             android:layout_width="0dp"
             android:layout_height="@dimen/control_size"
             android:layout_weight="1"
             android:maxWidth="64dp"
             android:layout_marginStart="@dimen/control_margin"
             android:background="@drawable/bg_button_round"
-            android:src="@drawable/ic_brightness"
-            android:contentDescription="@string/btn_brightness"
+            android:src="@drawable/ic_mic"
+            android:contentDescription="@string/btn_mic"
             android:scaleType="centerInside"
             android:padding="12dp" />
 

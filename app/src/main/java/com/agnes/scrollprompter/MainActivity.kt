@@ -35,13 +35,6 @@ class MainActivity : AppCompatActivity() {
     private var voiceFollowOn = false
     private var lastSpeechTime = 0L
     private var promptFinished = false  // 文稿已滚到末尾，避免语音跟随反复重启
-    private var updatingVoiceSwitch = false  // 防止程序化设置开关状态时触发回调
-
-    private fun setVoiceSwitch(checked: Boolean) {
-        updatingVoiceSwitch = true
-        binding.switchVoiceFollow.isChecked = checked
-        updatingVoiceSwitch = false
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,18 +66,12 @@ class MainActivity : AppCompatActivity() {
             PackageManager.PERMISSION_GRANTED
 
     private fun setupMicPermission() {
-        // 语音跟随开关已移入设置面板
-        binding.switchVoiceFollow.setOnCheckedChangeListener { _, checked ->
-            if (updatingVoiceSwitch) return@setOnCheckedChangeListener
-            if (checked) {
-                if (!hasMicPermission()) {
-                    setVoiceSwitch(false)
-                    requestMicPermission.launch(Manifest.permission.RECORD_AUDIO)
-                } else {
-                    startVoiceFollow()
-                }
+        // 语音跟随按钮保留在底部控制栏
+        binding.btnMic.setOnClickListener {
+            if (!hasMicPermission()) {
+                requestMicPermission.launch(Manifest.permission.RECORD_AUDIO)
             } else {
-                stopVoiceFollow(showToast = true)
+                toggleVoiceFollow()
             }
         }
         micManager.onLevel = { level ->
@@ -151,6 +138,7 @@ class MainActivity : AppCompatActivity() {
         // 亮度
         brightnessValue = settings.getBrightnessValue()
         applyBrightness(brightnessValue)
+        binding.brightnessMode.text = brightnessLabel(brightnessValue)
 
         // 文字颜色
         setupColorSwatches()
@@ -210,8 +198,8 @@ class MainActivity : AppCompatActivity() {
         // 播放/暂停
         binding.btnPlay.setOnClickListener { togglePlay() }
 
-        // 亮度循环切换（4 档）
-        binding.btnBrightness.setOnClickListener { cycleBrightness() }
+        // 亮度循环切换（4 档，按钮在设置面板里）
+        binding.brightnessMode.setOnClickListener { cycleBrightness() }
 
         // 设置面板开关
         binding.btnSettings.setOnClickListener {
@@ -296,7 +284,7 @@ class MainActivity : AppCompatActivity() {
         voiceFollowOn = true
         lastSpeechTime = System.currentTimeMillis()
         promptFinished = false
-        setVoiceSwitch(true)
+        binding.btnMic.setBackgroundResource(R.drawable.bg_mic_active)
         Toast.makeText(this, R.string.mic_on_hint, Toast.LENGTH_SHORT).show()
     }
 
@@ -305,7 +293,7 @@ class MainActivity : AppCompatActivity() {
         voiceFollowOn = false
         micManager.stop()
         scrollManager.pause()
-        setVoiceSwitch(false)
+        binding.btnMic.setBackgroundResource(R.drawable.bg_button_round)
         binding.btnPlay.setImageResource(R.drawable.ic_play)
         binding.btnPlay.setBackgroundResource(R.drawable.bg_play_round)
         updateControlBarVisibility()
@@ -424,6 +412,14 @@ class MainActivity : AppCompatActivity() {
         }
         applyBrightness(brightnessValue)
         settings.saveBrightness(brightnessValue)
+        binding.brightnessMode.text = brightnessLabel(brightnessValue)
+    }
+
+    private fun brightnessLabel(value: Float): String = when (value) {
+        0.3f -> getString(R.string.brightness_low)
+        0.5f -> getString(R.string.brightness_medium)
+        0.8f -> getString(R.string.brightness_high)
+        else -> getString(R.string.brightness_auto)
     }
 
     private fun applyBrightness(value: Float) {
