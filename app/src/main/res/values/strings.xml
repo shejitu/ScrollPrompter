@@ -22,6 +22,8 @@
     <string name="history_link">浏览历史记录</string>
     <string name="history_title">粘贴历史</string>
     <string name="history_empty">暂无历史记录</string>
+    <string name="history_empty_desc">暂无历史记录。\n\n每次在编辑文稿里点击「保存」后，内容会自动记入历史（最多 30 条），方便以后翻找重新粘贴。</string>
+    <string name="cleared_hint">已清空输入框（点「保存」才会真正清掉文稿）</string>
     <string name="label_follow_screen">跟随屏幕</string>
     <string name="follow_screen_desc">开启：控制栏在横屏、竖屏下都自动贴底显示（推荐）。关闭：播放时控制栏自动隐藏，点屏幕任意处呼出。</string>
     <string name="label_brightness">屏幕亮度</string>

@@ -442,24 +442,42 @@ class MainActivity : AppCompatActivity() {
         input.minLines = 8
         input.setPadding(24, 20, 24, 20)
 
-        // 「历史记录」入口（点击弹出历史列表，选中即填回输入框）
-        val historyLink = android.widget.TextView(this)
-        historyLink.text = getString(R.string.history_link)
-        historyLink.setTextColor(ContextCompat.getColor(this, R.color.accent))
-        historyLink.textSize = 14f
-        historyLink.setPadding(6, 18, 6, 0)
-        historyLink.setOnClickListener { showHistoryDialog(input) }
+        // 「清空」按钮：只清空输入框内容，不关闭对话框
+        // （v1.5 用对话框 neutral 按钮实现，点击会直接关闭整个对话框，导致看不到清空效果）
+        val clearBtn = android.widget.Button(this).apply {
+            text = getString(R.string.btn_clear)
+            textSize = 14f
+            setOnClickListener {
+                input.setText("")
+                input.setHint(R.string.hint_edit_text)
+                Toast.makeText(context, R.string.cleared_hint, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // 「历史记录」按钮：打开历史列表，选中填回输入框（不关闭编辑对话框）
+        val historyBtn = android.widget.Button(this).apply {
+            textSize = 14f
+            updateHistoryLabel(this)
+            setOnClickListener { showHistoryDialog(input) }
+        }
+
+        val actionRow = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.END or android.view.Gravity.CENTER_VERTICAL
+            setPadding(0, 8, 0, 0)
+            addView(clearBtn)
+            addView(historyBtn)
+        }
 
         val box = android.widget.LinearLayout(this)
         box.orientation = android.widget.LinearLayout.VERTICAL
         box.addView(input)
-        box.addView(historyLink)
+        box.addView(actionRow)
 
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.edit_title)
             .setView(box)
             .setNegativeButton(android.R.string.cancel, null)
-            .setNeutralButton(R.string.btn_clear) { _, _ -> input.setText("") }
             .setPositiveButton(R.string.edit_save) { _, _ ->
                 val newText = input.text.toString()
                 settings.saveText(newText)
@@ -476,16 +494,26 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun updateHistoryLabel(btn: android.widget.Button) {
+        val n = settings.getHistory().size
+        btn.text = if (n > 0) getString(R.string.history_link) + "（$n）" else getString(R.string.history_link)
+    }
+
     /** 粘贴历史列表：标签 = 时间 + 内容前8字，选中填回输入框 */
     private fun showHistoryDialog(input: android.widget.EditText) {
         val history = settings.getHistory()
         if (history.isEmpty()) {
-            Toast.makeText(this, R.string.history_empty, Toast.LENGTH_SHORT).show()
+            // 空历史用对话框明确提示（v1.5 只弹 Toast 太容易错过）
+            MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.history_title)
+                .setMessage(R.string.history_empty_desc)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
             return
         }
         val fmt = java.text.SimpleDateFormat("MM-dd HH:mm", java.util.Locale.getDefault())
         val tags = history.map { p ->
-            "${fmt.format(java.util.Date(p.first))} ${p.second.take(8)}"
+            "${fmt.format(java.util.Date(p.first))} ${p.second.take(8).replace('\n', ' ')}"
         }.toTypedArray()
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.history_title)
