@@ -275,6 +275,18 @@
             android:scaleType="centerInside"
             android:padding="20dp" />
 
+        <!-- 语音跟随（你朗读→滚动，停顿→暂停） -->
+        <ImageButton
+            android:id="@+id/btn_mic"
+            android:layout_width="@dimen/control_size"
+            android:layout_height="@dimen/control_size"
+            android:layout_marginStart="@dimen/control_margin"
+            android:background="@drawable/bg_button_round"
+            android:src="@drawable/ic_mic"
+            android:contentDescription="@string/btn_mic"
+            android:scaleType="centerInside"
+            android:padding="20dp" />
+
         <!-- 播放/暂停（大按钮） -->
         <ImageButton
             android:id="@+id/btn_play"

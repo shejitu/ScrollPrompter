@@ -1,5 +1,7 @@
 package com.agnes.scrollprompter
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
@@ -10,6 +12,8 @@ import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.widget.SeekBar
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.agnes.scrollprompter.databinding.ActivityMainBinding
@@ -24,6 +28,12 @@ class MainActivity : AppCompatActivity() {
     // 当前亮度档位（-1=自动，0.3=低，0.5=中，0.8=高）
     private var brightnessValue: Float = -1f
 
+    // ---- 语音跟随 ----
+    private val micManager = MicManager()
+    private var voiceFollowOn = false
+    private var lastSpeechTime = 0L
+    private var promptFinished = false  // 文稿已滚到末尾，避免语音跟随反复重启
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -37,6 +47,33 @@ class MainActivity : AppCompatActivity() {
         loadSettings()
         setupControls()
         setupScrollCallbacks()
+        setupMicPermission()
+    }
+
+    private val requestMicPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                startVoiceFollow()
+            } else {
+                Toast.makeText(this, R.string.mic_denied, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    private fun hasMicPermission(): Boolean =
+        ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) ==
+            PackageManager.PERMISSION_GRANTED
+
+    private fun setupMicPermission() {
+        binding.btnMic.setOnClickListener {
+            if (!hasMicPermission()) {
+                requestMicPermission.launch(Manifest.permission.RECORD_AUDIO)
+            } else {
+                toggleVoiceFollow()
+            }
+        }
+        micManager.onLevel = { level ->
+            binding.root.post { onMicLevel(level) }
+        }
     }
 
     // ---- 初始化 ----
@@ -144,6 +181,7 @@ class MainActivity : AppCompatActivity() {
         // 点击文字区快速前后跳转（左半屏后退 / 右半屏前进）
         binding.scrollView.setOnTouchListener { view, event ->
             if (event.action == MotionEvent.ACTION_UP) {
+                promptFinished = false  // 手动回跳后允许语音跟随继续
                 val half = view.width / 2f
                 if (event.x < half) scrollManager.stepBackward() else scrollManager.stepForward()
             }
@@ -153,6 +191,56 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupScrollCallbacks() {
         scrollManager.onFinished = {
+            promptFinished = true
+            binding.btnPlay.setImageResource(R.drawable.ic_play)
+            binding.btnPlay.setBackgroundResource(R.drawable.bg_play_round)
+        }
+    }
+
+    // ---- 语音跟随（朗读→滚动，停顿→暂停） ----
+
+    private fun toggleVoiceFollow() {
+        if (voiceFollowOn) stopVoiceFollow(showToast = true) else startVoiceFollow()
+    }
+
+    private fun startVoiceFollow() {
+        if (voiceFollowOn) return
+        if (!micManager.start()) {
+            Toast.makeText(this, R.string.mic_failed, Toast.LENGTH_SHORT).show()
+            return
+        }
+        voiceFollowOn = true
+        lastSpeechTime = System.currentTimeMillis()
+        promptFinished = false
+        binding.btnMic.setBackgroundResource(R.drawable.bg_mic_active)
+        Toast.makeText(this, R.string.mic_on_hint, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun stopVoiceFollow(showToast: Boolean) {
+        if (!voiceFollowOn) return
+        voiceFollowOn = false
+        micManager.stop()
+        scrollManager.pause()
+        binding.btnMic.setBackgroundResource(R.drawable.bg_button_round)
+        binding.btnPlay.setImageResource(R.drawable.ic_play)
+        binding.btnPlay.setBackgroundResource(R.drawable.bg_play_round)
+        if (showToast) Toast.makeText(this, R.string.mic_off_hint, Toast.LENGTH_SHORT).show()
+    }
+
+    /** 主线程处理音量：检测到朗读自动滚动，静默超过阈值自动暂停 */
+    private fun onMicLevel(level: Float) {
+        if (!voiceFollowOn) return
+        val now = System.currentTimeMillis()
+        val speaking = level > micManager.speechThreshold()
+        if (speaking) {
+            lastSpeechTime = now
+            if (!scrollManager.isPlaying && !promptFinished) {
+                scrollManager.play()
+                binding.btnPlay.setImageResource(R.drawable.ic_pause)
+                binding.btnPlay.setBackgroundResource(R.drawable.bg_pause_round)
+            }
+        } else if (scrollManager.isPlaying && now - lastSpeechTime > SILENCE_PAUSE_MS) {
+            scrollManager.pause()
             binding.btnPlay.setImageResource(R.drawable.ic_play)
             binding.btnPlay.setBackgroundResource(R.drawable.bg_play_round)
         }
@@ -161,6 +249,12 @@ class MainActivity : AppCompatActivity() {
     // ---- 播放控制 ----
 
     private fun togglePlay() {
+        // 语音跟随中按播放键 = 退出跟随，改为手动控制
+        if (voiceFollowOn) {
+            stopVoiceFollow(showToast = true)
+            return
+        }
+        promptFinished = false
         val playing = scrollManager.toggle()
         if (playing) {
             binding.btnPlay.setImageResource(R.drawable.ic_pause)
@@ -277,6 +371,7 @@ class MainActivity : AppCompatActivity() {
                     binding.prompterText.text = TextProcessor.normalize(newText)
                 }
                 scrollManager.reset()
+                promptFinished = false
             }
             .show()
     }
@@ -287,7 +382,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        // 后台自动暂停滚动，避免离开界面后仍在滚动
+        // 离开界面：释放麦克风并停止滚动，避免后台占用与继续滚动
+        stopVoiceFollow(showToast = false)
         if (scrollManager.isPlaying) {
             scrollManager.pause()
             binding.btnPlay.setImageResource(R.drawable.ic_play)
@@ -298,6 +394,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         scrollManager.pause()
+        micManager.stop()
     }
 
     companion object {
@@ -308,5 +405,6 @@ class MainActivity : AppCompatActivity() {
         private const val SPEED_MAX_MS = 800
         private const val SPEED_MIN_MS = 16
         private const val SPEED_RANGE = 784  // 800 - 16
+        private const val SILENCE_PAUSE_MS = 1500L  // 静默多久后自动暂停
     }
 }

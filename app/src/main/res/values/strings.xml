@@ -6,6 +6,11 @@
     <string name="btn_brightness">亮度</string>
     <string name="btn_settings">设置</string>
     <string name="btn_edit">文稿</string>
+    <string name="btn_mic">语音跟随</string>
+    <string name="mic_on_hint">语音跟随已开启：你朗读时滚动，停顿约1.5秒自动暂停</string>
+    <string name="mic_off_hint">语音跟随已关闭</string>
+    <string name="mic_denied">需要麦克风权限才能使用语音跟随，请在系统设置中允许</string>
+    <string name="mic_failed">麦克风启动失败，请重试或检查权限</string>
     <string name="btn_close">关闭</string>
     <string name="label_font_size">字体大小</string>
     <string name="label_scroll_speed">滚动速度</string>
