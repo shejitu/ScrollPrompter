@@ -5,6 +5,8 @@ import android.content.pm.PackageManager
 import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.InputType
 import android.util.TypedValue
 import android.view.MotionEvent
@@ -175,6 +177,13 @@ class MainActivity : AppCompatActivity() {
             binding.settingsPanel.visibility = if (visible) View.GONE else View.VISIBLE
         }
 
+        // 跟随屏幕开关（开=横竖屏贴底；关=播放时自动隐藏、点屏呼出）
+        binding.switchFollowScreen.isChecked = settings.getFollowScreen()
+        binding.switchFollowScreen.setOnCheckedChangeListener { _, checked ->
+            settings.saveFollowScreen(checked)
+            updateControlBarVisibility()
+        }
+
         // 编辑文稿
         binding.btnEdit.setOnClickListener { showEditDialog() }
 
@@ -182,6 +191,7 @@ class MainActivity : AppCompatActivity() {
         binding.scrollView.setOnTouchListener { view, event ->
             if (event.action == MotionEvent.ACTION_UP) {
                 promptFinished = false  // 手动回跳后允许语音跟随继续
+                updateControlBarVisibility()  // 点屏幕呼出被隐藏的控制栏
                 val half = view.width / 2f
                 if (event.x < half) scrollManager.stepBackward() else scrollManager.stepForward()
             }
@@ -194,7 +204,39 @@ class MainActivity : AppCompatActivity() {
             promptFinished = true
             binding.btnPlay.setImageResource(R.drawable.ic_play)
             binding.btnPlay.setBackgroundResource(R.drawable.bg_play_round)
+            updateControlBarVisibility()
         }
+    }
+
+    // ---- 控制栏显隐（跟随屏幕） ----
+
+    private val uiHandler = Handler(Looper.getMainLooper())
+    private val hideBarRunnable = Runnable { hideControlBar() }
+
+    /**
+     * 根据开关与播放状态决定控制栏显隐：
+     * 开关开（默认）→ 任何时刻、任何横竖屏方向都贴底显示；
+     * 开关关 → 播放中 3 秒后自动隐藏（沉浸读稿），点屏幕或暂停即呼出。
+     */
+    private fun updateControlBarVisibility() {
+        uiHandler.removeCallbacks(hideBarRunnable)
+        if (settings.getFollowScreen() || !scrollManager.isPlaying) {
+            showControlBar()
+        } else {
+            showControlBar()
+            uiHandler.postDelayed(hideBarRunnable, AUTO_HIDE_MS)
+        }
+    }
+
+    private fun showControlBar() {
+        binding.controlBar.animate().translationY(0f).alpha(1f).setDuration(180).start()
+    }
+
+    private fun hideControlBar() {
+        if (settings.getFollowScreen() || !scrollManager.isPlaying) return
+        binding.controlBar.animate()
+            .translationY(binding.controlBar.height.toFloat()).alpha(0f)
+            .setDuration(250).start()
     }
 
     // ---- 语音跟随（朗读→滚动，停顿→暂停） ----
@@ -224,6 +266,7 @@ class MainActivity : AppCompatActivity() {
         binding.btnMic.setBackgroundResource(R.drawable.bg_button_round)
         binding.btnPlay.setImageResource(R.drawable.ic_play)
         binding.btnPlay.setBackgroundResource(R.drawable.bg_play_round)
+        updateControlBarVisibility()
         if (showToast) Toast.makeText(this, R.string.mic_off_hint, Toast.LENGTH_SHORT).show()
     }
 
@@ -238,11 +281,13 @@ class MainActivity : AppCompatActivity() {
                 scrollManager.play()
                 binding.btnPlay.setImageResource(R.drawable.ic_pause)
                 binding.btnPlay.setBackgroundResource(R.drawable.bg_pause_round)
+                updateControlBarVisibility()
             }
         } else if (scrollManager.isPlaying && now - lastSpeechTime > SILENCE_PAUSE_MS) {
             scrollManager.pause()
             binding.btnPlay.setImageResource(R.drawable.ic_play)
             binding.btnPlay.setBackgroundResource(R.drawable.bg_play_round)
+            updateControlBarVisibility()
         }
     }
 
@@ -263,6 +308,7 @@ class MainActivity : AppCompatActivity() {
             binding.btnPlay.setImageResource(R.drawable.ic_play)
             binding.btnPlay.setBackgroundResource(R.drawable.bg_play_round)
         }
+        updateControlBarVisibility()
     }
 
     // ---- 字体 ----
@@ -406,5 +452,6 @@ class MainActivity : AppCompatActivity() {
         private const val SPEED_MIN_MS = 16
         private const val SPEED_RANGE = 784  // 800 - 16
         private const val SILENCE_PAUSE_MS = 1500L  // 静默多久后自动暂停
+        private const val AUTO_HIDE_MS = 3000L      // 跟随屏幕关闭时，播放多久后隐藏控制栏
     }
 }

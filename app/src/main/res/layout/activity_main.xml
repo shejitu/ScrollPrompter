@@ -233,20 +233,47 @@
                         android:backgroundTint="@color/text_pink" />
                 </FrameLayout>
             </LinearLayout>
+
+            <!-- 跟随屏幕（横竖屏自动贴底 / 播放时自动隐藏） -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="16dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/label_follow_screen"
+                    android:textColor="@color/prompter_text"
+                    android:textSize="15sp" />
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switch_follow_screen"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/follow_screen_desc"
+                android:textColor="@color/prompter_text_dim"
+                android:textSize="12sp" />
         </LinearLayout>
     </ScrollView>
 
-    <!-- 底部控制栏 -->
+    <!-- 底部控制栏：小按钮用弹性宽度自适应（小屏收缩/大屏封顶），任何屏幕都不会溢出 -->
     <LinearLayout
         android:id="@+id/control_bar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
-        android:paddingLeft="16dp"
-        android:paddingRight="16dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="20dp"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="14dp"
         android:background="#CC0F1218"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -255,61 +282,69 @@
         <!-- 文稿 -->
         <ImageButton
             android:id="@+id/btn_edit"
-            android:layout_width="@dimen/control_size"
+            android:layout_width="0dp"
             android:layout_height="@dimen/control_size"
+            android:layout_weight="1"
+            android:maxWidth="64dp"
             android:background="@drawable/bg_button_round"
             android:src="@drawable/ic_edit"
             android:contentDescription="@string/btn_edit"
             android:scaleType="centerInside"
-            android:padding="20dp" />
+            android:padding="12dp" />
 
         <!-- 亮度 -->
         <ImageButton
             android:id="@+id/btn_brightness"
-            android:layout_width="@dimen/control_size"
+            android:layout_width="0dp"
             android:layout_height="@dimen/control_size"
+            android:layout_weight="1"
+            android:maxWidth="64dp"
             android:layout_marginStart="@dimen/control_margin"
             android:background="@drawable/bg_button_round"
             android:src="@drawable/ic_brightness"
             android:contentDescription="@string/btn_brightness"
             android:scaleType="centerInside"
-            android:padding="20dp" />
+            android:padding="12dp" />
 
         <!-- 语音跟随（你朗读→滚动，停顿→暂停） -->
         <ImageButton
             android:id="@+id/btn_mic"
-            android:layout_width="@dimen/control_size"
+            android:layout_width="0dp"
             android:layout_height="@dimen/control_size"
+            android:layout_weight="1"
+            android:maxWidth="64dp"
             android:layout_marginStart="@dimen/control_margin"
             android:background="@drawable/bg_button_round"
             android:src="@drawable/ic_mic"
             android:contentDescription="@string/btn_mic"
             android:scaleType="centerInside"
-            android:padding="20dp" />
+            android:padding="12dp" />
 
         <!-- 播放/暂停（大按钮） -->
         <ImageButton
             android:id="@+id/btn_play"
-            android:layout_width="88dp"
-            android:layout_height="88dp"
-            android:layout_marginStart="20dp"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_marginStart="10dp"
             android:background="@drawable/bg_play_round"
             android:src="@drawable/ic_play"
             android:contentDescription="@string/btn_play"
             android:scaleType="centerInside"
-            android:padding="26dp" />
+            android:padding="20dp" />
 
         <!-- 设置 -->
         <ImageButton
             android:id="@+id/btn_settings"
-            android:layout_width="@dimen/control_size"
+            android:layout_width="0dp"
             android:layout_height="@dimen/control_size"
-            android:layout_marginStart="20dp"
+            android:layout_weight="1"
+            android:maxWidth="64dp"
+            android:layout_marginStart="10dp"
             android:background="@drawable/bg_button_round"
             android:src="@drawable/ic_settings"
             android:contentDescription="@string/btn_settings"
             android:scaleType="centerInside"
-            android:padding="20dp" />
+            android:padding="12dp" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -37,6 +37,11 @@ class SettingManager(context: Context) {
 
     fun saveTextColorIndex(index: Int) = prefs.edit().putInt(KEY_TEXT_COLOR, index).apply()
 
+    // ---- 跟随屏幕（控制栏横竖屏贴底；关闭则播放时自动隐藏）----
+    fun getFollowScreen(): Boolean = prefs.getBoolean(KEY_FOLLOW_SCREEN, true)
+
+    fun saveFollowScreen(on: Boolean) = prefs.edit().putBoolean(KEY_FOLLOW_SCREEN, on).apply()
+
     companion object {
         private const val PREFS_NAME = "scroll_prompter_settings"
         private const val KEY_TEXT = "prompter_text"
@@ -44,5 +49,6 @@ class SettingManager(context: Context) {
         private const val KEY_SCROLL_INTERVAL = "scroll_interval_ms"
         private const val KEY_BRIGHTNESS = "brightness_value"
         private const val KEY_TEXT_COLOR = "text_color_index"
+        private const val KEY_FOLLOW_SCREEN = "follow_screen"
     }
 }
