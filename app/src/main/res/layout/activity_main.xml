@@ -320,8 +320,9 @@
                 android:layout_marginTop="4dp"
                 android:max="10" />
 
-            <!-- 作者署名 -->
+            <!-- 作者署名 + 版本号（版本号在代码中追加） -->
             <TextView
+                android:id="@+id/author_name_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"

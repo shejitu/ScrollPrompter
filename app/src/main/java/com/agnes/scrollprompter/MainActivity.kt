@@ -143,6 +143,10 @@ class MainActivity : AppCompatActivity() {
         // 文字颜色
         setupColorSwatches()
         selectTextColor(settings.getTextColorIndex(), save = false)
+
+        // 作者署名 + 版本号（方便用户确认当前安装的版本）
+        val verName = packageManager.getPackageInfo(packageName, 0).versionName
+        binding.authorNameView.text = "${getString(R.string.author_name)}（v$verName）"
     }
 
     private fun setupControls() {
@@ -431,6 +435,7 @@ class MainActivity : AppCompatActivity() {
     // ---- 编辑文稿 ----
 
     private fun showEditDialog() {
+        // 每次打开都预填当前已保存的文稿内容
         val input = android.widget.EditText(this)
         input.setText(if (TextProcessor.isEmpty(settings.getText())) "" else settings.getText())
         input.setTextColor(ContextCompat.getColor(this, R.color.prompter_text))
@@ -442,61 +447,67 @@ class MainActivity : AppCompatActivity() {
         input.minLines = 8
         input.setPadding(24, 20, 24, 20)
 
-        // 「清空」按钮：只清空输入框内容，不关闭对话框
-        // （v1.5 用对话框 neutral 按钮实现，点击会直接关闭整个对话框，导致看不到清空效果）
-        val clearBtn = android.widget.Button(this).apply {
-            text = getString(R.string.btn_clear)
-            textSize = 14f
-            setOnClickListener {
-                input.setText("")
-                input.setHint(R.string.hint_edit_text)
-                Toast.makeText(context, R.string.cleared_hint, Toast.LENGTH_SHORT).show()
+        // 四个操作按钮全部放在对话框内部自定义视图里：
+        // 系统对话框按钮（取消/保存/清空）点击会自动关闭整个对话框，导致「清空」看起来无效；
+        // 内部按钮的行为完全可控——只有「取消」「保存」会关闭，「清空」「历史」保持打开。
+        var dialog: androidx.appcompat.app.AlertDialog? = null
+
+        fun actionButton(label: String, onClick: () -> Unit): android.widget.Button =
+            android.widget.Button(this).apply {
+                text = label
+                textSize = 13f
+                isAllCaps = false
+                setPadding(4, 12, 4, 12)
+                setOnClickListener { onClick() }
             }
+
+        val clearBtn = actionButton(getString(R.string.btn_clear)) {
+            input.setText("")
+            input.setHint(R.string.hint_edit_text)
+            Toast.makeText(this, R.string.cleared_hint, Toast.LENGTH_SHORT).show()
+        }
+        val cancelBtn = actionButton(getString(android.R.string.cancel)) {
+            dialog?.dismiss()
+        }
+        val saveBtn = actionButton(getString(R.string.edit_save)) {
+            val newText = input.text.toString()
+            settings.saveText(newText)
+            if (TextProcessor.isEmpty(newText)) {
+                binding.prompterText.setText(R.string.empty_hint)
+            } else {
+                binding.prompterText.text = TextProcessor.normalize(newText)
+                settings.addHistory(newText)
+            }
+            scrollManager.reset()
+            promptFinished = false
+            updateControlBarVisibility()
+            dialog?.dismiss()
+        }
+        val historyBtn = actionButton(getString(R.string.history_link)) {
+            showHistoryDialog(input)
         }
 
-        // 「历史记录」按钮：打开历史列表，选中填回输入框（不关闭编辑对话框）
-        val historyBtn = android.widget.Button(this).apply {
-            textSize = 14f
-            updateHistoryLabel(this)
-            setOnClickListener { showHistoryDialog(input) }
-        }
-
-        val actionRow = android.widget.LinearLayout(this).apply {
+        val btnRow = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.HORIZONTAL
-            gravity = android.view.Gravity.END or android.view.Gravity.CENTER_VERTICAL
-            setPadding(0, 8, 0, 0)
-            addView(clearBtn)
-            addView(historyBtn)
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(0, 10, 0, 0)
+            listOf(clearBtn, cancelBtn, saveBtn, historyBtn).forEach { btn ->
+                btn.layoutParams = android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                addView(btn)
+            }
         }
 
         val box = android.widget.LinearLayout(this)
         box.orientation = android.widget.LinearLayout.VERTICAL
         box.addView(input)
-        box.addView(actionRow)
+        box.addView(btnRow)
 
-        MaterialAlertDialogBuilder(this)
+        dialog = MaterialAlertDialogBuilder(this)
             .setTitle(R.string.edit_title)
             .setView(box)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(R.string.edit_save) { _, _ ->
-                val newText = input.text.toString()
-                settings.saveText(newText)
-                if (TextProcessor.isEmpty(newText)) {
-                    binding.prompterText.setText(R.string.empty_hint)
-                } else {
-                    binding.prompterText.text = TextProcessor.normalize(newText)
-                    settings.addHistory(newText)
-                }
-                scrollManager.reset()
-                promptFinished = false
-                updateControlBarVisibility()
-            }
-            .show()
-    }
-
-    private fun updateHistoryLabel(btn: android.widget.Button) {
-        val n = settings.getHistory().size
-        btn.text = if (n > 0) getString(R.string.history_link) + "（$n）" else getString(R.string.history_link)
+            .setCancelable(true)
+            .create()
+        dialog?.show()
     }
 
     /** 粘贴历史列表：标签 = 时间 + 内容前8字，选中填回输入框 */
