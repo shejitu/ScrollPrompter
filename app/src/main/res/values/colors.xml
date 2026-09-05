@@ -10,4 +10,10 @@
     <color name="pause_orange">#F59E0B</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
+    <!-- 文字颜色色板 -->
+    <color name="text_yellow">#FFD54F</color>
+    <color name="text_green">#66BB6A</color>
+    <color name="text_cyan">#4DD0E1</color>
+    <color name="text_orange">#FFA726</color>
+    <color name="text_pink">#F06292</color>
 </resources>

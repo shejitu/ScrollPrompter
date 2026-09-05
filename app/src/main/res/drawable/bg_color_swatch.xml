@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 色板默认状态：透明底 + 细描边 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#00000000" />
+    <stroke android:width="1dp" android:color="#33F5F7FA" />
+    <corners android:radius="10dp" />
+</shape>

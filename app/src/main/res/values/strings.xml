@@ -18,6 +18,8 @@
     <string name="speed_fast">快</string>
     <string name="font_small">小</string>
     <string name="font_large">大</string>
+    <string name="label_text_color">文字颜色</string>
+    <string name="font_input_hint">12~200</string>
     <string name="hint_edit_text">在此输入或粘贴要显示的文稿内容…</string>
     <string name="edit_title">编辑文稿</string>
     <string name="edit_save">保存</string>

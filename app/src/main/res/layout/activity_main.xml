@@ -36,75 +36,205 @@
     </ScrollView>
 
     <!-- 设置面板（默认隐藏） -->
-    <LinearLayout
-        android:id="@+id/settings_panel"
+    <ScrollView
+        android:id="@+id/settings_scroll"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="@drawable/bg_panel"
-        android:padding="20dp"
-        android:visibility="gone"
+        android:scrollbars="none"
+        android:overScrollMode="never"
         app:layout_constraintBottom_toTopOf="@id/control_bar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- 字体大小 -->
         <LinearLayout
+            android:id="@+id/settings_panel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/label_font_size"
-                android:textColor="@color/prompter_text"
-                android:textSize="15sp" />
-            <TextView
-                android:id="@+id/font_value"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:text="42sp"
-                android:textColor="@color/accent"
-                android:textSize="15sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-        <SeekBar
-            android:id="@+id/font_seekbar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="66" />
+            android:orientation="vertical"
+            android:background="@drawable/bg_panel"
+            android:padding="20dp"
+            android:visibility="gone">
 
-        <!-- 滚动速度 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginTop="12dp">
+            <!-- 字体大小 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_font_size"
+                    android:textColor="@color/prompter_text"
+                    android:textSize="15sp" />
+                <TextView
+                    android:id="@+id/font_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:text="42sp"
+                    android:textColor="@color/accent"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="4dp">
+                <SeekBar
+                    android:id="@+id/font_seekbar"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:max="66" />
+                <EditText
+                    android:id="@+id/font_input"
+                    android:layout_width="84dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="12dp"
+                    android:background="@drawable/bg_edit"
+                    android:hint="@string/font_input_hint"
+                    android:textColorHint="@color/prompter_text_dim"
+                    android:textColor="@color/prompter_text"
+                    android:textSize="14sp"
+                    android:gravity="center"
+                    android:maxLength="4"
+                    android:imeOptions="actionDone"
+                    android:importantForAutofill="no"
+                    android:inputType="numberDecimal" />
+            </LinearLayout>
+
+            <!-- 滚动速度 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="12dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_scroll_speed"
+                    android:textColor="@color/prompter_text"
+                    android:textSize="15sp" />
+                <TextView
+                    android:id="@+id/speed_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:text=""
+                    android:textColor="@color/accent"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+            <SeekBar
+                android:id="@+id/speed_seekbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:max="784" />
+
+            <!-- 文字颜色 -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/label_scroll_speed"
+                android:layout_marginTop="16dp"
+                android:text="@string/label_text_color"
                 android:textColor="@color/prompter_text"
                 android:textSize="15sp" />
-            <TextView
-                android:id="@+id/speed_value"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:text=""
-                android:textColor="@color/accent"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
+
+                <FrameLayout
+                    android:id="@+id/color_white"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/bg_color_swatch">
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_swatch_fill"
+                        android:backgroundTint="@color/prompter_text" />
+                </FrameLayout>
+
+                <FrameLayout
+                    android:id="@+id/color_yellow"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/bg_color_swatch">
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_swatch_fill"
+                        android:backgroundTint="@color/text_yellow" />
+                </FrameLayout>
+
+                <FrameLayout
+                    android:id="@+id/color_green"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/bg_color_swatch">
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_swatch_fill"
+                        android:backgroundTint="@color/text_green" />
+                </FrameLayout>
+
+                <FrameLayout
+                    android:id="@+id/color_cyan"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/bg_color_swatch">
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_swatch_fill"
+                        android:backgroundTint="@color/text_cyan" />
+                </FrameLayout>
+
+                <FrameLayout
+                    android:id="@+id/color_orange"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/bg_color_swatch">
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_swatch_fill"
+                        android:backgroundTint="@color/text_orange" />
+                </FrameLayout>
+
+                <FrameLayout
+                    android:id="@+id/color_pink"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_color_swatch">
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_swatch_fill"
+                        android:backgroundTint="@color/text_pink" />
+                </FrameLayout>
+            </LinearLayout>
         </LinearLayout>
-        <SeekBar
-            android:id="@+id/speed_seekbar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="770" />
-    </LinearLayout>
+    </ScrollView>
 
     <!-- 底部控制栏 -->
     <LinearLayout

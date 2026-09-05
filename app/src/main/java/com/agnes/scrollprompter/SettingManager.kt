@@ -32,11 +32,17 @@ class SettingManager(context: Context) {
 
     fun saveBrightness(value: Float) = prefs.edit().putFloat(KEY_BRIGHTNESS, value).apply()
 
+    // ---- 文字颜色（色板索引）----
+    fun getTextColorIndex(): Int = prefs.getInt(KEY_TEXT_COLOR, 0)
+
+    fun saveTextColorIndex(index: Int) = prefs.edit().putInt(KEY_TEXT_COLOR, index).apply()
+
     companion object {
         private const val PREFS_NAME = "scroll_prompter_settings"
         private const val KEY_TEXT = "prompter_text"
         private const val KEY_FONT_SIZE = "font_size_sp"
         private const val KEY_SCROLL_INTERVAL = "scroll_interval_ms"
         private const val KEY_BRIGHTNESS = "brightness_value"
+        private const val KEY_TEXT_COLOR = "text_color_index"
     }
 }

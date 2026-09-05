@@ -47,12 +47,15 @@ class ScrollManager(
                 return
             }
 
-            val next = (current + stepPx).coerceAtMost(maxScroll)
+            val next = (current + effectiveStep()).coerceAtMost(maxScroll)
             scrollView.scrollTo(0, next)
             onProgress?.invoke(next)
             handler.postDelayed(this, intervalMs)
         }
     }
+
+    /** 有效步长：极速档（间隔<32ms）自动加倍，突破 Handler 定时器粒度限制 */
+    private fun effectiveStep(): Int = if (intervalMs < 32) stepPx * 2 else stepPx
 
     /** 开始播放 */
     fun play() {

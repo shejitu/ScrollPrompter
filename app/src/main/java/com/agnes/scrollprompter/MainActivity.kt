@@ -3,10 +3,12 @@ package com.agnes.scrollprompter
 import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
+import android.text.InputType
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.view.inputmethod.EditorInfo
 import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -75,7 +77,7 @@ class MainActivity : AppCompatActivity() {
         binding.fontSeekbar.progress = (fontSp - FONT_MIN_SP).toInt().coerceIn(0, FONT_MAX - FONT_MIN_SP)
         binding.fontValue.text = "${fontSp.toInt()}sp"
 
-        // 滚动速度（间隔 30~800ms，值越大越慢）
+        // 滚动速度（间隔 16~800ms，值越大越慢；极速端配合自动加倍步长）
         val interval = settings.getScrollIntervalMs()
         scrollManager.intervalMs = interval
         binding.speedSeekbar.progress = (SPEED_MAX_MS - interval).toInt().coerceIn(0, SPEED_RANGE)
@@ -84,6 +86,10 @@ class MainActivity : AppCompatActivity() {
         // 亮度
         brightnessValue = settings.getBrightnessValue()
         applyBrightness(brightnessValue)
+
+        // 文字颜色
+        setupColorSwatches()
+        selectTextColor(settings.getTextColorIndex(), save = false)
     }
 
     private fun setupControls() {
@@ -100,10 +106,17 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
+        // 字体大小直接输入（回车确认，失焦也生效）
+        binding.fontInput.inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
+        binding.fontInput.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) { applyFontInput(); true } else false
+        }
+        binding.fontInput.setOnFocusChangeListener { _, hasFocus -> if (!hasFocus) applyFontInput() }
+
         // 滚动速度 SeekBar（progress 越大 → 间隔越小 → 越快）
         binding.speedSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                val interval = SPEED_MAX_MS - progress
+                val interval = (SPEED_MAX_MS - progress).coerceAtLeast(SPEED_MIN_MS)
                 scrollManager.intervalMs = interval.toLong()
                 binding.speedValue.text = formatSpeed(interval.toLong())
             }
@@ -166,6 +179,58 @@ class MainActivity : AppCompatActivity() {
         binding.prompterText.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
     }
 
+    /** 应用输入框中的字体数值（12~200sp，超出滑条范围也允许） */
+    private fun applyFontInput() {
+        val value = binding.fontInput.text.toString().toFloatOrNull() ?: return
+        val sp = value.coerceIn(FONT_INPUT_MIN, FONT_INPUT_MAX)
+        applyFontSize(sp)
+        settings.saveFontSize(sp)
+        binding.fontValue.text = "${sp.toInt()}sp"
+        if (sp >= FONT_MIN_SP && sp <= FONT_MAX) {
+            binding.fontSeekbar.progress = (sp - FONT_MIN_SP).toInt()
+        }
+    }
+
+    // ---- 文字颜色 ----
+
+    private fun setupColorSwatches() {
+        val swatches = listOf(
+            binding.colorWhite, binding.colorYellow, binding.colorGreen,
+            binding.colorCyan, binding.colorOrange, binding.colorPink
+        )
+        swatches.forEachIndexed { index, view ->
+            view.setOnClickListener { selectTextColor(index, save = true) }
+        }
+    }
+
+    private fun swatchColors(): List<Int> = listOf(
+        ContextCompat.getColor(this, R.color.prompter_text),   // 白（默认）
+        ContextCompat.getColor(this, R.color.text_yellow),
+        ContextCompat.getColor(this, R.color.text_green),
+        ContextCompat.getColor(this, R.color.text_cyan),
+        ContextCompat.getColor(this, R.color.text_orange),
+        ContextCompat.getColor(this, R.color.text_pink)
+    )
+
+    private fun selectTextColor(index: Int, save: Boolean) {
+        val swatches = listOf(
+            binding.colorWhite, binding.colorYellow, binding.colorGreen,
+            binding.colorCyan, binding.colorOrange, binding.colorPink
+        )
+        val safeIndex = index.coerceIn(0, swatches.lastIndex)
+        binding.prompterText.setTextColor(swatchColors()[safeIndex])
+        swatches.forEachIndexed { i, view ->
+            if (i == safeIndex) {
+                view.setBackgroundResource(R.drawable.bg_color_swatch_ring)
+                view.animate().scaleX(1.3f).scaleY(1.3f).alpha(1f).setDuration(120).start()
+            } else {
+                view.setBackgroundResource(R.drawable.bg_color_swatch)
+                view.animate().scaleX(1f).scaleY(1f).alpha(0.55f).setDuration(120).start()
+            }
+        }
+        if (save) settings.saveTextColorIndex(safeIndex)
+    }
+
     // ---- 亮度 ----
 
     private fun cycleBrightness() {
@@ -176,6 +241,7 @@ class MainActivity : AppCompatActivity() {
             else -> -1f   // 自动
         }
         applyBrightness(brightnessValue)
+        settings.saveBrightness(brightnessValue)
     }
 
     private fun applyBrightness(value: Float) {
@@ -237,7 +303,10 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val FONT_MIN_SP = 24
         private const val FONT_MAX = 90
+        private const val FONT_INPUT_MIN = 12
+        private const val FONT_INPUT_MAX = 200
         private const val SPEED_MAX_MS = 800
-        private const val SPEED_RANGE = 770  // 800 - 30
+        private const val SPEED_MIN_MS = 16
+        private const val SPEED_RANGE = 784  // 800 - 16
     }
 }
