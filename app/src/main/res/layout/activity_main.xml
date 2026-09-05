@@ -260,8 +260,105 @@
                 android:text="@string/follow_screen_desc"
                 android:textColor="@color/prompter_text_dim"
                 android:textSize="12sp" />
+
+            <!-- 语音跟随开关（原控制栏麦克风按钮移入此处） -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="16dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/label_voice_follow"
+                    android:textColor="@color/prompter_text"
+                    android:textSize="15sp" />
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switch_voice_follow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <!-- 语音跟随灵敏度 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="12dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_sensitivity"
+                    android:textColor="@color/prompter_text"
+                    android:textSize="15sp" />
+                <TextView
+                    android:id="@+id/sensitivity_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:text="×3.0"
+                    android:textColor="@color/accent"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+            <SeekBar
+                android:id="@+id/sensitivity_seekbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:max="10" />
+
+            <!-- 作者署名 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:gravity="center"
+                android:text="@string/author_name"
+                android:textColor="@color/prompter_text_dim"
+                android:textSize="13sp" />
         </LinearLayout>
     </ScrollView>
+
+    <!-- 启动闪屏：just for musi！ -->
+    <FrameLayout
+        android:id="@+id/splash_overlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/prompter_bg"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_gravity="center">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/splash_text"
+                android:textColor="@color/accent"
+                android:textSize="34sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/author_name"
+                android:textColor="@color/prompter_text_dim"
+                android:textSize="14sp" />
+        </LinearLayout>
+    </FrameLayout>
 
     <!-- 底部控制栏：小按钮用弹性宽度自适应（小屏收缩/大屏封顶），任何屏幕都不会溢出 -->
     <LinearLayout
@@ -303,20 +400,6 @@
             android:background="@drawable/bg_button_round"
             android:src="@drawable/ic_brightness"
             android:contentDescription="@string/btn_brightness"
-            android:scaleType="centerInside"
-            android:padding="12dp" />
-
-        <!-- 语音跟随（你朗读→滚动，停顿→暂停） -->
-        <ImageButton
-            android:id="@+id/btn_mic"
-            android:layout_width="0dp"
-            android:layout_height="@dimen/control_size"
-            android:layout_weight="1"
-            android:maxWidth="64dp"
-            android:layout_marginStart="@dimen/control_margin"
-            android:background="@drawable/bg_button_round"
-            android:src="@drawable/ic_mic"
-            android:contentDescription="@string/btn_mic"
             android:scaleType="centerInside"
             android:padding="12dp" />
 

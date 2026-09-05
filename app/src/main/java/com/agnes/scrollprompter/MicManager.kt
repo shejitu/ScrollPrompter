@@ -28,8 +28,11 @@ class MicManager {
     @Volatile var noiseFloor: Float = 0.02f
         private set
 
-    /** 朗读判定阈值 = 噪声底 × 倍数 + 底限 */
-    fun speechThreshold(): Float = noiseFloor * 3f + 0.015f
+    /** 灵敏度倍率：越大越难触发（2.0 最灵敏 ~ 6.0 最迟钝），设置面板可调 */
+    var thresholdMultiplier: Float = 3f
+
+    /** 朗读判定阈值 = 噪声底 × 灵敏度倍率 + 底限 */
+    fun speechThreshold(): Float = noiseFloor * thresholdMultiplier + 0.015f
 
     @SuppressLint("MissingPermission") // 调用前已确保授予 RECORD_AUDIO
     fun start(): Boolean {

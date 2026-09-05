@@ -35,6 +35,13 @@ class MainActivity : AppCompatActivity() {
     private var voiceFollowOn = false
     private var lastSpeechTime = 0L
     private var promptFinished = false  // 文稿已滚到末尾，避免语音跟随反复重启
+    private var updatingVoiceSwitch = false  // 防止程序化设置开关状态时触发回调
+
+    private fun setVoiceSwitch(checked: Boolean) {
+        updatingVoiceSwitch = true
+        binding.switchVoiceFollow.isChecked = checked
+        updatingVoiceSwitch = false
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,16 +73,35 @@ class MainActivity : AppCompatActivity() {
             PackageManager.PERMISSION_GRANTED
 
     private fun setupMicPermission() {
-        binding.btnMic.setOnClickListener {
-            if (!hasMicPermission()) {
-                requestMicPermission.launch(Manifest.permission.RECORD_AUDIO)
+        // 语音跟随开关已移入设置面板
+        binding.switchVoiceFollow.setOnCheckedChangeListener { _, checked ->
+            if (updatingVoiceSwitch) return@setOnCheckedChangeListener
+            if (checked) {
+                if (!hasMicPermission()) {
+                    setVoiceSwitch(false)
+                    requestMicPermission.launch(Manifest.permission.RECORD_AUDIO)
+                } else {
+                    startVoiceFollow()
+                }
             } else {
-                toggleVoiceFollow()
+                stopVoiceFollow(showToast = true)
             }
         }
         micManager.onLevel = { level ->
             binding.root.post { onMicLevel(level) }
         }
+        // 启动闪屏：just for musi！
+        showSplash()
+    }
+
+    private fun showSplash() {
+        binding.splashOverlay.alpha = 1f
+        binding.splashOverlay.visibility = View.VISIBLE
+        uiHandler.postDelayed({
+            binding.splashOverlay.animate().alpha(0f).setDuration(400)
+                .withEndAction { binding.splashOverlay.visibility = View.GONE }
+                .start()
+        }, SPLASH_MS)
     }
 
     // ---- 初始化 ----
@@ -162,6 +188,22 @@ class MainActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 settings.saveScrollInterval(scrollManager.intervalMs)
+            }
+        })
+
+        // 语音跟随灵敏度（×2.0 最灵敏 ~ ×6.0 最迟钝）
+        val mult = settings.getSensitivity()
+        micManager.thresholdMultiplier = mult
+        binding.sensitivitySeekbar.progress = ((mult - 2f) / 0.4f).toInt().coerceIn(0, 10)
+        binding.sensitivityValue.text = "×${"%.1f".format(micManager.thresholdMultiplier)}"
+        binding.sensitivitySeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                micManager.thresholdMultiplier = 2f + progress * 0.4f
+                binding.sensitivityValue.text = "×${"%.1f".format(micManager.thresholdMultiplier)}"
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                settings.saveSensitivity(micManager.thresholdMultiplier)
             }
         })
 
@@ -254,7 +296,7 @@ class MainActivity : AppCompatActivity() {
         voiceFollowOn = true
         lastSpeechTime = System.currentTimeMillis()
         promptFinished = false
-        binding.btnMic.setBackgroundResource(R.drawable.bg_mic_active)
+        setVoiceSwitch(true)
         Toast.makeText(this, R.string.mic_on_hint, Toast.LENGTH_SHORT).show()
     }
 
@@ -263,7 +305,7 @@ class MainActivity : AppCompatActivity() {
         voiceFollowOn = false
         micManager.stop()
         scrollManager.pause()
-        binding.btnMic.setBackgroundResource(R.drawable.bg_button_round)
+        setVoiceSwitch(false)
         binding.btnPlay.setImageResource(R.drawable.ic_play)
         binding.btnPlay.setBackgroundResource(R.drawable.bg_play_round)
         updateControlBarVisibility()
@@ -404,10 +446,24 @@ class MainActivity : AppCompatActivity() {
         input.minLines = 8
         input.setPadding(24, 20, 24, 20)
 
+        // 「历史记录」入口（点击弹出历史列表，选中即填回输入框）
+        val historyLink = android.widget.TextView(this)
+        historyLink.text = getString(R.string.history_link)
+        historyLink.setTextColor(ContextCompat.getColor(this, R.color.accent))
+        historyLink.textSize = 14f
+        historyLink.setPadding(6, 18, 6, 0)
+        historyLink.setOnClickListener { showHistoryDialog(input) }
+
+        val box = android.widget.LinearLayout(this)
+        box.orientation = android.widget.LinearLayout.VERTICAL
+        box.addView(input)
+        box.addView(historyLink)
+
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.edit_title)
-            .setView(input)
+            .setView(box)
             .setNegativeButton(android.R.string.cancel, null)
+            .setNeutralButton(R.string.btn_clear) { _, _ -> input.setText("") }
             .setPositiveButton(R.string.edit_save) { _, _ ->
                 val newText = input.text.toString()
                 settings.saveText(newText)
@@ -415,10 +471,30 @@ class MainActivity : AppCompatActivity() {
                     binding.prompterText.setText(R.string.empty_hint)
                 } else {
                     binding.prompterText.text = TextProcessor.normalize(newText)
+                    settings.addHistory(newText)
                 }
                 scrollManager.reset()
                 promptFinished = false
+                updateControlBarVisibility()
             }
+            .show()
+    }
+
+    /** 粘贴历史列表：标签 = 时间 + 内容前8字，选中填回输入框 */
+    private fun showHistoryDialog(input: android.widget.EditText) {
+        val history = settings.getHistory()
+        if (history.isEmpty()) {
+            Toast.makeText(this, R.string.history_empty, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val fmt = java.text.SimpleDateFormat("MM-dd HH:mm", java.util.Locale.getDefault())
+        val tags = history.map { p ->
+            "${fmt.format(java.util.Date(p.first))} ${p.second.take(8)}"
+        }.toTypedArray()
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.history_title)
+            .setItems(tags) { _, which -> input.setText(history[which].second) }
+            .setNegativeButton(android.R.string.cancel, null)
             .show()
     }
 
@@ -453,5 +529,6 @@ class MainActivity : AppCompatActivity() {
         private const val SPEED_RANGE = 784  // 800 - 16
         private const val SILENCE_PAUSE_MS = 1500L  // 静默多久后自动暂停
         private const val AUTO_HIDE_MS = 3000L      // 跟随屏幕关闭时，播放多久后隐藏控制栏
+        private const val SPLASH_MS = 2000L         // 启动闪屏停留时长
     }
 }

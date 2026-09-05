@@ -42,6 +42,38 @@ class SettingManager(context: Context) {
 
     fun saveFollowScreen(on: Boolean) = prefs.edit().putBoolean(KEY_FOLLOW_SCREEN, on).apply()
 
+    // ---- 语音跟随灵敏度倍率（2.0~6.0）----
+    fun getSensitivity(): Float = prefs.getFloat(KEY_SENSITIVITY, 3f)
+
+    fun saveSensitivity(v: Float) = prefs.edit().putFloat(KEY_SENSITIVITY, v).apply()
+
+    // ---- 文稿粘贴历史（JSON 数组，最新在前，最多 30 条）----
+    fun getHistory(): List<Pair<Long, String>> {
+        val raw = prefs.getString(KEY_HISTORY, null) ?: return emptyList()
+        return try {
+            val arr = org.json.JSONArray(raw)
+            (0 until arr.length()).map { i ->
+                val o = arr.getJSONObject(i)
+                Pair(o.getLong("t"), o.getString("x"))
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    fun addHistory(text: String) {
+        if (text.isBlank()) return
+        val list = getHistory().toMutableList()
+        if (list.isNotEmpty() && list[0].second == text) return  // 与最近一条相同不重复记
+        list.add(0, Pair(System.currentTimeMillis(), text))
+        while (list.size > 30) list.removeAt(list.size - 1)
+        val arr = org.json.JSONArray()
+        list.forEach { p ->
+            arr.put(org.json.JSONObject().put("t", p.first).put("x", p.second))
+        }
+        prefs.edit().putString(KEY_HISTORY, arr.toString()).apply()
+    }
+
     companion object {
         private const val PREFS_NAME = "scroll_prompter_settings"
         private const val KEY_TEXT = "prompter_text"
@@ -50,5 +82,7 @@ class SettingManager(context: Context) {
         private const val KEY_BRIGHTNESS = "brightness_value"
         private const val KEY_TEXT_COLOR = "text_color_index"
         private const val KEY_FOLLOW_SCREEN = "follow_screen"
+        private const val KEY_SENSITIVITY = "mic_sensitivity"
+        private const val KEY_HISTORY = "paste_history"
     }
 }

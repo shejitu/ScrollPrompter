@@ -14,6 +14,14 @@
     <string name="btn_close">关闭</string>
     <string name="label_font_size">字体大小</string>
     <string name="label_scroll_speed">滚动速度</string>
+    <string name="label_voice_follow">语音跟随（朗读滚动/停顿暂停）</string>
+    <string name="label_sensitivity">跟随灵敏度</string>
+    <string name="splash_text">just for musi！</string>
+    <string name="author_name">作者：笑握刀锋</string>
+    <string name="btn_clear">清空</string>
+    <string name="history_link">浏览历史记录</string>
+    <string name="history_title">粘贴历史</string>
+    <string name="history_empty">暂无历史记录</string>
     <string name="label_follow_screen">跟随屏幕</string>
     <string name="follow_screen_desc">开启：控制栏在横屏、竖屏下都自动贴底显示（推荐）。关闭：播放时控制栏自动隐藏，点屏幕任意处呼出。</string>
     <string name="label_brightness">屏幕亮度</string>
